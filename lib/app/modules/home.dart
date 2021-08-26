@@ -28,18 +28,23 @@ class Home extends GetView<Controller> {
             onPressed: () {
               Get.defaultDialog(
                 title: 'About'.tr,
-                middleText: '${controller.version}\nCopyleft@ 2021 umbraHare.',
                 content: RichText(
                   text: TextSpan(
                     children: [
-                      TextSpan(text: '${controller.version}\nCopyleft@ 2021 '),
+                      TextSpan(
+                        text: '${controller.version}\nCopyleft@ 2021 ',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                       TextSpan(
                         text: 'umbraHare',
                         style: TextStyle(fontSize: 18, color: Colors.blue),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () => controller.launchURL(),
                       ),
-                      TextSpan(text: '.'),
+                      TextSpan(
+                        text: '.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ],
                   ),
                   textAlign: TextAlign.center,
