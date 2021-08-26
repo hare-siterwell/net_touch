@@ -24,8 +24,8 @@ class Controller extends GetxController with SingleGetTickerProviderMixin {
 
   final msgCon = ScrollController();
   final sendCon = TextEditingController();
-  final hostCon = TextEditingController(text: '10.10.10.1');
-  final portCon = TextEditingController(text: '8080');
+  final hostCon = TextEditingController();
+  final portCon = TextEditingController();
   final btnCon1 = TextEditingController();
   final btnCon2 = TextEditingController();
   final btnCon3 = TextEditingController();
@@ -41,14 +41,13 @@ class Controller extends GetxController with SingleGetTickerProviderMixin {
   final tcpConnected = false.obs;
   final bleConnected = false.obs;
   final unstopped = true.obs;
+  final rabbit = [0.0, 0.0, 0.0].obs;
 
+  var version = '';
   final flutterBlue = FlutterBlue.instance;
   var scanResults = Map<String, ScanResult>();
   var bleIndex = -1;
 
-  final rabbit = [0.0, 0.0, 0.0].obs;
-
-  var version = '';
   TabController? tabController;
   Socket? socket;
   BluetoothDevice? device;
@@ -61,6 +60,8 @@ class Controller extends GetxController with SingleGetTickerProviderMixin {
   @override
   void onInit() {
     tabController = TabController(vsync: this, length: 3);
+    hostCon.text = box.read('host') ?? '10.10.10.1';
+    portCon.text = box.read('port') ?? '8080';
     listenNetwork();
     _initPackageInfo();
 
@@ -139,11 +140,12 @@ class Controller extends GetxController with SingleGetTickerProviderMixin {
   }
 
   void connectSocket() async {
+    final _host = hostCon.text;
+    final _port = int.parse(portCon.text);
     connecting.value = true;
     socket?.destroy();
     tcpConnected.value = false;
-    await Socket.connect(hostCon.text, int.parse(portCon.text),
-            timeout: Duration(seconds: 1))
+    await Socket.connect(_host, _port, timeout: Duration(seconds: 1))
         .then((sock) {
       socket = sock;
       socket!.listen((data) {
@@ -161,6 +163,8 @@ class Controller extends GetxController with SingleGetTickerProviderMixin {
         tcpConnected.value = false;
       }, cancelOnError: false);
       tcpConnected.value = true;
+      box.write('host', _host);
+      box.write('port', _port.toString());
     }).catchError((e) {
       print("Unable to connect: $e");
       Get.snackbar('Notice'.tr, 'Tcp connection failed...'.tr);

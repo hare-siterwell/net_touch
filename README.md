@@ -9,7 +9,10 @@ A network debugging assistant based on flutter.
 5. Error feedback;
 
 ## Getting Started
-This project is built on flutter. 
+This project is built on flutter.  
+<img src="assets/screenshot/Screenshot_20210826_164456.jpg" alt="screenshot" width="200">
+<img src="assets/screenshot/Screenshot_20210826_164501.jpg" alt="screenshot" width="200">
+<img src="assets/screenshot/Screenshot_20210826_164821.jpg" alt="screenshot" width="200">
 
 ### Build
 ```
