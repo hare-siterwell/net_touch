@@ -13,119 +13,100 @@ import 'package:url_launcher/url_launcher.dart';
 
 class Controller extends GetxController with SingleGetTickerProviderMixin {
   final box = GetStorage();
+  final msgCon = ScrollController(); // 接收框
+  final hostCon = TextEditingController(); // host输入框
+  final portCon = TextEditingController(); // port输入框
+  final sendCon = TextEditingController(); // 发送框
+  final btnCon = List.generate(6, (i) => TextEditingController()); // 按钮组
+
+  var uuidList = Map<String, String>();
+  var uuidServer = <String>[];
+  var uuidChara = <String>[];
+  final uuidItem = ['', '', ''].obs; // 选中的uuid
+
+  /// 获取存储语言
   Locale get locale =>
       box.read('locale') == 'zh_CN' ? Locale('zh', 'CN') : Locale('en', 'US');
 
+  /// 获取存储主题
   ThemeData get theme =>
       box.read('isDarkMode') ?? false ? ThemeData.dark() : ThemeData.light();
 
+  /// 获取存储命令
   List get commands =>
       box.read('commands') ?? ['cmd1', 'cmd2', 'cmd3', 'cmd4', 'cmd5', 'cmd6'];
 
-  final msgCon = ScrollController();
-  final sendCon = TextEditingController();
-  final hostCon = TextEditingController();
-  final portCon = TextEditingController();
-  final btnCon1 = TextEditingController();
-  final btnCon2 = TextEditingController();
-  final btnCon3 = TextEditingController();
-  final btnCon4 = TextEditingController();
-  final btnCon5 = TextEditingController();
-  final btnCon6 = TextEditingController();
+  /// 获取服务UUID
+  // List get uuid =>
+  //     box.read('uuid') ??
+  //     [
+  //       '9ECADC24-0EE5-A9E0-93F3-A3B50100406E',
+  //       '9ECADC24-0EE5-A9E0-93F3-A3B50100406E',
+  //       '9ECADC24-0EE5-A9E0-93F3-A3B50100406E'
+  //     ];
 
-  final messages = <String>[].obs;
-  final allBlueNameAry = <String>[].obs;
-  final isWifiOn = false.obs;
-  final isBlueOn = false.obs;
-  final connecting = false.obs;
-  final tcpConnected = false.obs;
-  final bleConnected = false.obs;
-  final unstopped = true.obs;
+  final messages = <String>[].obs; // 接收信息
+  final allBlueNameAry = <String>[].obs; // 搜索到的蓝牙列表
+  final tcpState = 0.obs; // 0,已关闭;1,连接中;2,未连接;3,已连接
+  final bleState = 0.obs; // 0,已关闭;1,连接中;2,未连接;3,已连接
+  final unstopped = true.obs; // 是否暂停接收信息
   final rabbit = [0.0, 0.0, 0.0].obs;
 
-  var version = '';
+  final _streamSubscriptions = <StreamSubscription>[];
   final flutterBlue = FlutterBlue.instance;
   var scanResults = Map<String, ScanResult>();
-  var bleIndex = -1;
+  var version = ''; // 版本号
+  var bleIndex = -1; // 蓝牙列表中已选中的
 
   TabController? tabController;
   Socket? socket;
   BluetoothDevice? device;
   BluetoothCharacteristic? txCharacteristic; // 蓝牙读
   BluetoothCharacteristic? rxCharacteristic; // 蓝牙写
-
-  final _streamSubscriptions = <StreamSubscription>[];
-  StreamSubscription? _subscription;
+  StreamSubscription? _subscriptionTx; // 蓝牙读监听
 
   @override
   void onInit() {
     tabController = TabController(vsync: this, length: 3);
     hostCon.text = box.read('host') ?? '10.10.10.1';
     portCon.text = box.read('port') ?? '8080';
-    listenNetwork();
     _initPackageInfo();
-
-    _streamSubscriptions.add(accelerometerEvents.listen((event) {
-      rabbit[0] = event.x;
-      rabbit[1] = event.y;
-      rabbit[2] = event.z;
-    }));
+    _streamSub();
     super.onInit();
   }
 
   @override
   void onClose() {
     tabController?.dispose();
-    socket?.destroy();
-    device?.disconnect();
-    allBlueNameAry.clear();
-    isWifiOn.value = false;
-    isBlueOn.value = false;
-    connecting.value = false;
-    tcpConnected.value = false;
-    bleConnected.value = false;
-    _subscription?.cancel();
     for (final subscription in _streamSubscriptions) {
       subscription.cancel();
     }
+    initTcp(0);
+    initBle(0);
     super.onClose();
   }
 
+  /// 获取版本号
   void _initPackageInfo() async {
     final _packageInfo = await PackageInfo.fromPlatform();
     version = _packageInfo.version;
   }
 
-  void launchURL() async {
-    const url = 'https://github.com/umbraHare';
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
-
-  void listenNetwork() {
+  /// 订阅流
+  void _streamSub() {
     _streamSubscriptions
         .add(Connectivity().onConnectivityChanged.listen((result) {
       if (result == ConnectivityResult.wifi) {
-        isWifiOn.value = true;
+        tcpState.value = 2;
       } else {
-        isWifiOn.value = false;
-        socket?.destroy();
-        tcpConnected.value = false;
-        connecting.value = false;
+        initTcp(0);
       }
     }));
     _streamSubscriptions.add(flutterBlue.state.listen((state) {
       if (state == BluetoothState.on) {
-        isBlueOn.value = true;
+        bleState.value = 2;
       } else {
-        isBlueOn.value = false;
-        device?.disconnect();
-        bleConnected.value = false;
-        allBlueNameAry.clear();
-        connecting.value = false;
+        initBle(0);
       }
     }));
     _streamSubscriptions.add(flutterBlue.scanResults.listen((results) {
@@ -137,108 +118,154 @@ class Controller extends GetxController with SingleGetTickerProviderMixin {
         }
       }
     }));
+    _streamSubscriptions.add(accelerometerEvents.listen((event) {
+      rabbit[0] = event.x;
+      rabbit[1] = event.y;
+      rabbit[2] = event.z;
+    }));
+  }
+
+  /// 网页跳转
+  void launchURL() async {
+    const url = 'https://github.com/umbraHare';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  /// TCP初始化 state:0,已关闭;1,连接中;2,未连接;3,已连接
+  void initTcp(int state) {
+    tcpState.value = state;
+    socket?.destroy();
+  }
+
+  /// BLE初始化 state:0,已关闭;1,连接中;2,未连接;3,已连接
+  void initBle(int state) {
+    bleState.value = state;
+    _subscriptionTx?.cancel();
+    txCharacteristic = null;
+    rxCharacteristic = null;
+    device?.disconnect();
   }
 
   void connectSocket() async {
     final _host = hostCon.text;
     final _port = int.parse(portCon.text);
-    connecting.value = true;
-    socket?.destroy();
-    tcpConnected.value = false;
+    initTcp(1);
+
     await Socket.connect(_host, _port, timeout: Duration(seconds: 1))
         .then((sock) {
       socket = sock;
       socket!.listen((data) {
         final msg = utf8.decode(data);
-        print(msg);
         if (unstopped.value) {
           messages.add('tcp << $msg');
+          msgCon
+              .animateTo(0,
+                  duration: Duration(milliseconds: 300), curve: Curves.easeOut)
+              .catchError((e) => print(e));
         }
       }, onError: (error) {
         print(error);
-        socket?.destroy();
-        tcpConnected.value = false;
+        initTcp(2);
       }, onDone: () {
-        socket?.destroy();
-        tcpConnected.value = false;
+        initTcp(2);
       }, cancelOnError: false);
-      tcpConnected.value = true;
+      tcpState.value = 3; // 连接成功
       box.write('host', _host);
       box.write('port', _port.toString());
     }).catchError((e) {
+      tcpState.value = 2;
       print("Unable to connect: $e");
       Get.snackbar('Notice'.tr, 'Tcp connection failed...'.tr);
     });
-    connecting.value = false;
   }
 
   void scanBle() async {
-    connecting.value = true;
-    _subscription?.cancel();
-    device?.disconnect();
-    bleConnected.value = false;
+    initBle(1);
     allBlueNameAry.clear();
+    uuidList.clear();
+    uuidServer.clear();
+    uuidChara.clear();
     bleIndex = -1;
-    await flutterBlue.startScan(timeout: Duration(seconds: 6)).catchError(
+    uuidItem.value = ['', '', ''];
+    await flutterBlue.startScan(timeout: Duration(seconds: 20)).catchError(
         (e) => Get.snackbar('Notice'.tr, 'Ble scanning failed...'.tr));
-    connecting.value = false;
+    bleState.value = 2;
   }
 
   void connectBle(int chooseBle) async {
     flutterBlue.stopScan();
-    connecting.value = false;
-    _subscription?.cancel();
-    device?.disconnect();
-    bleConnected.value = false;
-    device = scanResults[allBlueNameAry[chooseBle]]!.device;
-
-    await Future.delayed(Duration(seconds: 1));
     bleIndex = chooseBle;
     allBlueNameAry.refresh();
-    connecting.value = true;
-
-    await device!
-        .connect(autoConnect: false, timeout: Duration(seconds: 10))
-        .catchError((e) => print(e));
-    await device!.discoverServices().then((services) {
-      services.forEach((service) {
-        final value = service.uuid.toString().toUpperCase().substring(4, 8);
-        if (value == 'CDD0') {
+    await Future.delayed(Duration(seconds: 1));
+    initBle(1);
+    device = scanResults[allBlueNameAry[bleIndex]]!.device;
+    try {
+      await device!.connect(autoConnect: false, timeout: Duration(seconds: 10));
+      var _flag = false, _flagTx = false, _flagRx = false;
+      await device!.discoverServices().then((services) {
+        services.forEach((service) {
+          final value = service.uuid.toString();
           final characteristics = service.characteristics;
+
           characteristics.forEach((characteristic) {
-            final valuex =
-                characteristic.uuid.toString().toUpperCase().substring(4, 8);
-            if (valuex == 'CDD1') {
-              txCharacteristic = characteristic;
-              // 收到下位机返回蓝牙数据回调监听
-              _bleDataCallback();
-            } else if (valuex == 'CDD2') {
-              rxCharacteristic = characteristic;
+            final valuex = characteristic.uuid.toString();
+            uuidList[valuex] = value;
+            _flag = true;
+            if (value == uuidItem[0]) {
+              if (!_flagTx && valuex == uuidItem[1]) {
+                txCharacteristic = characteristic;
+                _bleDataCallback();
+                _flagTx = true;
+              } else if (!_flagRx && valuex == uuidItem[2]) {
+                rxCharacteristic = characteristic;
+                _flagRx = true;
+              }
             }
           });
-        }
+        });
       });
-    });
-    connecting.value = false;
+
+      if (_flag && (!_flagTx || !_flagRx)) {
+        uuidServer = uuidList.values.toSet().toList();
+        uuidServer.sort();
+
+        uuidChara = uuidList.keys
+            .where((element) => uuidList[element] == uuidServer[0])
+            .toList();
+        uuidChara.sort();
+
+        uuidItem.value = [uuidServer[0], uuidChara[0], uuidChara[0]];
+        Get.snackbar('Notice'.tr, 'Please select UUID'.tr);
+      }
+      if (bleState.value != 3) {
+        bleState.value = 2;
+      }
+    } catch (e) {
+      Get.snackbar('Notice'.tr, 'error');
+    }
   }
 
   void _bleDataCallback() async {
-    connecting.value = false;
-    bleConnected.value = true;
-    await txCharacteristic?.setNotifyValue(true).catchError((e) {}); // 概率报错
-    _subscription = txCharacteristic!.value.listen((value) {
+    await txCharacteristic!.setNotifyValue(true).catchError((e) {}); // 概率报错
+    _subscriptionTx = txCharacteristic!.value.listen((value) {
       final msg = utf8.decode(value);
-      print(msg);
       if (unstopped.value) {
         messages.add('ble << $msg');
+        msgCon
+            .animateTo(0,
+                duration: Duration(milliseconds: 300), curve: Curves.easeOut)
+            .catchError((e) => print(e));
       }
+      bleState.value = 3;
     }, onError: (error) {
       print(error);
-      device?.disconnect();
-      bleConnected.value = false;
+      initBle(2);
     }, onDone: () {
-      device?.disconnect();
-      bleConnected.value = false;
+      initBle(2);
     }, cancelOnError: false);
   }
 

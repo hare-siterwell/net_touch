@@ -30,18 +30,18 @@ class TabPage3 extends GetView<Controller> {
                         controller.sendCmd(controller.commands[0]);
                       },
                       onLongPress: () {
-                        controller.btnCon1.text = controller.commands[0];
+                        controller.btnCon[0].text = controller.commands[0];
                         Get.defaultDialog(
                           title: 'Modify'.tr,
                           content: TextField(
-                            controller: controller.btnCon1,
+                            controller: controller.btnCon[0],
                             decoration: InputDecoration(
                               labelText: 'Modify button commands here'.tr,
                             ),
                           ),
                           textCancel: 'ok'.tr,
                           onCancel: () {
-                            controller.commands[0] = controller.btnCon1.text;
+                            controller.commands[0] = controller.btnCon[0].text;
                             controller.box
                                 .write('commands', controller.commands);
                           },
@@ -54,18 +54,18 @@ class TabPage3 extends GetView<Controller> {
                         controller.sendCmd(controller.commands[1]);
                       },
                       onLongPress: () {
-                        controller.btnCon2.text = controller.commands[1];
+                        controller.btnCon[1].text = controller.commands[1];
                         Get.defaultDialog(
                           title: 'Modify'.tr,
                           content: TextField(
-                            controller: controller.btnCon2,
+                            controller: controller.btnCon[1],
                             decoration: InputDecoration(
                               labelText: 'Modify button commands here'.tr,
                             ),
                           ),
                           textCancel: 'ok'.tr,
                           onCancel: () {
-                            controller.commands[1] = controller.btnCon2.text;
+                            controller.commands[1] = controller.btnCon[1].text;
                             controller.box
                                 .write('commands', controller.commands);
                           },
@@ -78,18 +78,18 @@ class TabPage3 extends GetView<Controller> {
                         controller.sendCmd(controller.commands[2]);
                       },
                       onLongPress: () {
-                        controller.btnCon3.text = controller.commands[2];
+                        controller.btnCon[2].text = controller.commands[2];
                         Get.defaultDialog(
                           title: 'Modify'.tr,
                           content: TextField(
-                            controller: controller.btnCon3,
+                            controller: controller.btnCon[2],
                             decoration: InputDecoration(
                               labelText: 'Modify button commands here'.tr,
                             ),
                           ),
                           textCancel: 'ok'.tr,
                           onCancel: () {
-                            controller.commands[2] = controller.btnCon3.text;
+                            controller.commands[2] = controller.btnCon[2].text;
                             controller.box
                                 .write('commands', controller.commands);
                           },
@@ -102,18 +102,18 @@ class TabPage3 extends GetView<Controller> {
                         controller.sendCmd(controller.commands[3]);
                       },
                       onLongPress: () {
-                        controller.btnCon4.text = controller.commands[3];
+                        controller.btnCon[3].text = controller.commands[3];
                         Get.defaultDialog(
                           title: 'Modify'.tr,
                           content: TextField(
-                            controller: controller.btnCon4,
+                            controller: controller.btnCon[3],
                             decoration: InputDecoration(
                               labelText: 'Modify button commands here'.tr,
                             ),
                           ),
                           textCancel: 'ok'.tr,
                           onCancel: () {
-                            controller.commands[3] = controller.btnCon4.text;
+                            controller.commands[3] = controller.btnCon[3].text;
                             controller.box
                                 .write('commands', controller.commands);
                           },
@@ -126,18 +126,18 @@ class TabPage3 extends GetView<Controller> {
                         controller.sendCmd(controller.commands[4]);
                       },
                       onLongPress: () {
-                        controller.btnCon5.text = controller.commands[4];
+                        controller.btnCon[4].text = controller.commands[4];
                         Get.defaultDialog(
                           title: 'Modify'.tr,
                           content: TextField(
-                            controller: controller.btnCon5,
+                            controller: controller.btnCon[4],
                             decoration: InputDecoration(
                               labelText: 'Modify button commands here'.tr,
                             ),
                           ),
                           textCancel: 'ok'.tr,
                           onCancel: () {
-                            controller.commands[4] = controller.btnCon5.text;
+                            controller.commands[4] = controller.btnCon[4].text;
                             controller.box
                                 .write('commands', controller.commands);
                           },
@@ -150,18 +150,18 @@ class TabPage3 extends GetView<Controller> {
                         controller.sendCmd(controller.commands[5]);
                       },
                       onLongPress: () {
-                        controller.btnCon6.text = controller.commands[5];
+                        controller.btnCon[5].text = controller.commands[5];
                         Get.defaultDialog(
                           title: 'Modify'.tr,
                           content: TextField(
-                            controller: controller.btnCon6,
+                            controller: controller.btnCon[5],
                             decoration: InputDecoration(
                               labelText: 'Modify button commands here'.tr,
                             ),
                           ),
                           textCancel: 'ok'.tr,
                           onCancel: () {
-                            controller.commands[5] = controller.btnCon6.text;
+                            controller.commands[5] = controller.btnCon[5].text;
                             controller.box
                                 .write('commands', controller.commands);
                           },

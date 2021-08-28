@@ -53,19 +53,32 @@ class TabPage1 extends GetView<Controller> {
               SizedBox(width: 20),
               Obx(
                 () => OutlinedButton(
-                  onPressed:
-                      controller.isWifiOn.value && !controller.connecting.value
-                          ? controller.connectSocket
-                          : null,
+                  onPressed: controller.tcpState.value == 0
+                      ? null
+                      : () {
+                          switch (controller.tcpState.value) {
+                            case 1:
+                              {}
+                              break;
+                            case 2:
+                              controller.connectSocket();
+                              break;
+                            case 3:
+                              controller.initTcp(2);
+                              break;
+                          }
+                        },
                   style: OutlinedButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                     ),
-                    side: controller.isWifiOn.value
+                    side: controller.tcpState.value != 0
                         ? BorderSide(width: 2, color: Colors.green)
                         : null,
                   ),
-                  child: Icon(Icons.wifi),
+                  child: controller.tcpState.value != 3
+                      ? Icon(Icons.wifi)
+                      : Icon(Icons.wifi_off),
                 ),
               ),
             ],
@@ -79,36 +92,54 @@ class TabPage1 extends GetView<Controller> {
                   SizedBox(width: 20),
                   Text('Status:    '.tr),
                   Obx(
-                    () => controller.connecting.value
+                    () => controller.tcpState.value == 1 ||
+                            controller.bleState.value == 1
                         ? SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator())
-                        : controller.tcpConnected.value &&
-                                controller.bleConnected.value
+                        : controller.tcpState.value == 3 &&
+                                controller.bleState.value == 3
                             ? Text('tcp & ble connected'.tr)
-                            : controller.tcpConnected.value
+                            : controller.tcpState.value == 3
                                 ? Text('tcp connected'.tr)
-                                : controller.bleConnected.value
+                                : controller.bleState.value == 3
                                     ? Text('ble connected'.tr)
                                     : Text('unconnected'.tr),
                   ),
                   Spacer(),
                   Obx(
                     () => OutlinedButton(
-                      onPressed: controller.isBlueOn.value &&
-                              !controller.connecting.value
-                          ? controller.scanBle
-                          : null,
+                      onPressed: controller.bleState.value == 0
+                          ? null
+                          : () {
+                              switch (controller.bleState.value) {
+                                case 1:
+                                  {
+                                    controller.flutterBlue.stopScan();
+                                    controller.initBle(2);
+                                  }
+                                  break;
+                                case 2:
+                                  controller.scanBle();
+                                  break;
+                                case 3:
+                                  controller.initBle(2);
+                                  break;
+                              }
+                            },
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        side: controller.isBlueOn.value
+                        side: controller.bleState.value != 0
                             ? BorderSide(width: 2, color: Colors.blue)
                             : null,
                       ),
-                      child: Icon(Icons.bluetooth),
+                      child: controller.bleState.value == 1 ||
+                              controller.bleState.value == 3
+                          ? Icon(Icons.bluetooth_disabled)
+                          : Icon(Icons.bluetooth),
                     ),
                   ),
                   SizedBox(width: 20),
@@ -140,6 +171,80 @@ class TabPage1 extends GetView<Controller> {
                       );
                     },
                   ),
+                ),
+              ),
+              Spacer(),
+              Container(
+                margin: EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Obx(
+                      () => DropdownButton(
+                        isExpanded: true,
+                        hint: Text('UUID Server'),
+                        items: controller.uuidServer
+                            .map((e) => DropdownMenuItem(
+                                  value: e,
+                                  child: Text(
+                                    e,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          controller.uuidChara = controller.uuidList.keys
+                              .where((element) =>
+                                  controller.uuidList[element] ==
+                                  value.toString())
+                              .toList();
+                          controller.uuidChara.sort();
+
+                          controller.uuidItem.value = [
+                            value.toString(),
+                            controller.uuidChara[0],
+                            controller.uuidChara[0]
+                          ];
+                        },
+                        value: controller.uuidItem[0],
+                      ),
+                    ),
+                    Obx(
+                      () => DropdownButton(
+                        isExpanded: true,
+                        hint: Text('UUID Tx'),
+                        items: controller.uuidChara
+                            .map((e) => DropdownMenuItem(
+                                  value: e,
+                                  child: Text(
+                                    e,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: (value) =>
+                            controller.uuidItem[1] = value.toString(),
+                        value: controller.uuidItem[1],
+                      ),
+                    ),
+                    Obx(
+                      () => DropdownButton(
+                        isExpanded: true,
+                        hint: Text('UUID Rx'),
+                        items: controller.uuidChara
+                            .map((e) => DropdownMenuItem(
+                                  value: e,
+                                  child: Text(
+                                    e,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: (value) =>
+                            controller.uuidItem[2] = value.toString(),
+                        value: controller.uuidItem[2],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

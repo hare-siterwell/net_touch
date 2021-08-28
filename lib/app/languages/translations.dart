@@ -22,6 +22,7 @@ class MyTranslations extends Translations {
           'Modify': '修改',
           'Value can\'t be empty!': '发送不能为空！',
           'Modify button commands here': '在此修改按钮命令',
+          'Modify Server UUID here': '在此修改服务UUID',
           'ok': '确定',
           'button1': '按钮1',
           'button2': '按钮2',
@@ -39,6 +40,7 @@ class MyTranslations extends Translations {
           'Ble scanning failed...': 'Ble扫描失败',
           'Failed to send!': '发送失败！',
           'To connect the device': '去连接设备',
+          'Please select UUID': '请选择UUID',
         },
       };
 }
