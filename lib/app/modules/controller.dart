@@ -16,8 +16,16 @@ class Controller extends GetxController with SingleGetTickerProviderMixin {
   final msgCon = ScrollController(); // 接收框
   final hostCon = TextEditingController(); // host输入框
   final portCon = TextEditingController(); // port输入框
+
   final sendCon = TextEditingController(); // 发送框
+
   final btnCon = List.generate(6, (i) => TextEditingController()); // 按钮组
+  final motorId = TextEditingController();
+  final subdivision = TextEditingController();
+  final reset = TextEditingController();
+  final totalStep = TextEditingController();
+  final speedMax = TextEditingController();
+  final actionThreshold = TextEditingController();
 
   var uuidList = Map<String, String>();
   var uuidServer = <String>[];
@@ -51,6 +59,7 @@ class Controller extends GetxController with SingleGetTickerProviderMixin {
   final bleState = 0.obs; // 0,已关闭;1,连接中;2,未连接;3,已连接
   final unstopped = true.obs; // 是否暂停接收信息
   final rabbit = [0.0, 0.0, 0.0].obs;
+  final motor = [0, 0, 0].obs;
 
   final _streamSubscriptions = <StreamSubscription>[];
   final flutterBlue = FlutterBlue.instance;
@@ -70,6 +79,12 @@ class Controller extends GetxController with SingleGetTickerProviderMixin {
     tabController = TabController(vsync: this, length: 3);
     hostCon.text = box.read('host') ?? '10.10.10.1';
     portCon.text = box.read('port') ?? '8080';
+    motorId.text = '1';
+    subdivision.text = '1';
+    reset.text = '0';
+    totalStep.text = '0';
+    speedMax.text = '0';
+    actionThreshold.text = '0';
     _initPackageInfo();
     _streamSub();
     super.onInit();
@@ -315,5 +330,41 @@ class Controller extends GetxController with SingleGetTickerProviderMixin {
         },
       );
     }
+  }
+
+  void sendMotor(String motorId, String subdivision, String reset,
+      String totalStep, String speedMax, String actionThreshold) async {
+    var _flag = false;
+    final msg = '{"motor_id": ' +
+        motorId +
+        ',"subdivision": ' +
+        subdivision +
+        ',"reset": ' +
+        reset +
+        ',"total_step": ' +
+        totalStep +
+        ',"speed_max": ' +
+        speedMax +
+        ',"action_threshold": ' +
+        actionThreshold +
+        '}';
+    try {
+      socket!.write(msg);
+      _flag = true;
+    } catch (e) {}
+    try {
+      await rxCharacteristic!.write(utf8.encode(msg));
+      _flag = true;
+    } catch (e) {}
+    if (!_flag) {
+      Get.defaultDialog(
+        middleText: 'Failed to send!'.tr,
+        textCancel: 'To connect the device'.tr,
+        onCancel: () {
+          tabController!.index = 0;
+        },
+      );
+    }
+    print(msg);
   }
 }

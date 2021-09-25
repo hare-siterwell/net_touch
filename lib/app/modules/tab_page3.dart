@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'controller.dart';
@@ -21,7 +24,7 @@ class TabPage3 extends GetView<Controller> {
                   crossAxisCount: 3,
                   childAspectRatio: 1.5,
                   crossAxisSpacing: 20,
-                  mainAxisSpacing: 50,
+                  mainAxisSpacing: 30,
                   shrinkWrap: true,
                   children: [
                     ElevatedButton(
@@ -168,40 +171,137 @@ class TabPage3 extends GetView<Controller> {
                         );
                       },
                     ),
-                    SizedBox(),
-                    ElevatedButton(
-                      child: Text('up'.tr),
-                      onPressed: () {
-                        controller.sendCmd('up');
+                    TextField(
+                      controller: controller.motorId,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: 'motorId'),
+                    ),
+                    TextField(
+                      controller: controller.subdivision,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: 'subdivision'),
+                    ),
+                    TextField(
+                      controller: controller.reset,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: 'reset'),
+                    ),
+                    GestureDetector(
+                      child: TextField(
+                        controller: controller.totalStep,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(labelText: 'totalStep'),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(
+                                r'^([1-9]\d{0,8}|1[1-9]\d{0,8}|2000000000)$'),
+                          ),
+                        ],
+                      ),
+                      onHorizontalDragStart: (e) {
+                        if (controller.totalStep.text.isEmpty) {
+                          controller.totalStep.text = '0';
+                        }
+                        controller.motor[0] =
+                            int.parse(controller.totalStep.text);
+                      },
+                      onHorizontalDragUpdate: (e) {
+                        e.delta.dx > 0
+                            ? controller.motor[0] += pow(e.delta.dx, 5).round()
+                            : controller.motor[0] -=
+                                pow(-e.delta.dx, 8).round();
+                        if (controller.motor[0] < 0) {
+                          controller.motor[0] = 0;
+                        } else if (controller.motor[0] > 2000000000) {
+                          controller.motor[0] = 2000000000;
+                        }
+                        controller.totalStep.text =
+                            controller.motor[0].toString();
+                      },
+                    ),
+                    GestureDetector(
+                      child: TextField(
+                        controller: controller.speedMax,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(labelText: 'speedMax'),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(
+                                r'^([1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$'),
+                          ),
+                        ],
+                      ),
+                      onHorizontalDragStart: (e) {
+                        if (controller.speedMax.text.isEmpty) {
+                          controller.speedMax.text = '0';
+                        }
+                        controller.motor[1] =
+                            int.parse(controller.speedMax.text);
+                      },
+                      onHorizontalDragUpdate: (e) {
+                        e.delta.dx > 0
+                            ? controller.motor[1] += pow(e.delta.dx, 5).round()
+                            : controller.motor[1] -=
+                                pow(-e.delta.dx, 5).round();
+                        if (controller.motor[1] < 0) {
+                          controller.motor[1] = 0;
+                        } else if (controller.motor[1] > 65535) {
+                          controller.motor[1] = 65535;
+                        }
+                        controller.speedMax.text =
+                            controller.motor[1].toString();
+                      },
+                    ),
+                    GestureDetector(
+                      child: TextField(
+                        controller: controller.actionThreshold,
+                        keyboardType: TextInputType.number,
+                        decoration:
+                            InputDecoration(labelText: 'actionThreshold'),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(
+                                r'^([1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$'),
+                          ),
+                        ],
+                      ),
+                      onHorizontalDragStart: (e) {
+                        if (controller.actionThreshold.text.isEmpty) {
+                          controller.actionThreshold.text = '0';
+                        }
+                        controller.motor[2] =
+                            int.parse(controller.actionThreshold.text);
+                      },
+                      onHorizontalDragUpdate: (e) {
+                        e.delta.dx > 0
+                            ? controller.motor[2] += pow(e.delta.dx, 8).round()
+                            : controller.motor[2] -=
+                                pow(-e.delta.dx, 5).round();
+                        if (controller.motor[2] < 0) {
+                          controller.motor[2] = 0;
+                        } else if (controller.motor[2] > 65535) {
+                          controller.motor[2] = 65535;
+                        }
+                        controller.actionThreshold.text =
+                            controller.motor[2].toString();
                       },
                     ),
                     SizedBox(),
-                    ElevatedButton(
-                      child: Text('left'.tr),
-                      onPressed: () {
-                        controller.sendCmd('left');
-                      },
-                    ),
-                    ElevatedButton(
-                      child: Text('ok'.tr),
-                      onPressed: () {
-                        controller.sendCmd('ok');
-                      },
-                    ),
-                    ElevatedButton(
-                      child: Text('right'.tr),
-                      onPressed: () {
-                        controller.sendCmd('right');
-                      },
-                    ),
-                    SizedBox(),
-                    ElevatedButton(
-                      child: Text('down'.tr),
-                      onPressed: () {
-                        controller.sendCmd('down');
-                      },
-                    ),
-                    SizedBox(),
+                    IconButton(
+                        onPressed: () {
+                          controller.sendMotor(
+                            controller.motorId.text,
+                            controller.subdivision.text,
+                            controller.reset.text,
+                            controller.totalStep.text,
+                            controller.speedMax.text,
+                            controller.actionThreshold.text,
+                          );
+                        },
+                        icon: Icon(
+                          Icons.send_outlined,
+                          size: 60,
+                        )),
                   ],
                 ),
               ),
